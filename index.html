@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Kito Money V3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f5;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;color:#111827}
+.app{max-width:560px;margin:auto;background:#fff;min-height:100vh;padding-bottom:95px}
+header{background:#111827;color:#fff;padding:48px 20px 24px;border-radius:0 0 28px 28px}
+.small{opacity:.65;font-size:13px}.bal{font-size:36px;font-weight:800;margin-top:7px;letter-spacing:-1px}
+.headerrow{display:flex;justify-content:space-between;align-items:center}.month{margin-top:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}.card{padding:15px;border:1px solid #e5e7eb;border-radius:18px;background:#fafafa}.n{font-size:19px;font-weight:700;margin-top:5px}.in{color:#16803c}.out{color:#c62828}
+section{padding:0 16px;margin-top:4px}.title{display:flex;justify-content:space-between;align-items:center}h2{font-size:19px;margin:18px 0 10px}
+button{border:0;border-radius:13px;padding:10px 13px;background:#111827;color:#fff;font-weight:700;font-size:14px}.secondary{background:#f0f1f3;color:#111827}
+.item{padding:13px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:12px}.muted{color:#6b7280;font-size:12px}
+.item-actions{display:flex;gap:6px;align-items:center}.tiny{padding:7px 9px;font-size:12px}
+.goal{border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:10px}.bar{height:9px;background:#e5e7eb;border-radius:10px;margin:11px 0;overflow:hidden}.fill{height:100%;background:#111827}.empty{text-align:center;color:#888;padding:18px}
+.chartbox{border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:12px}.chart{height:145px;display:flex;align-items:flex-end;gap:7px;margin-top:15px}.barcol{flex:1;text-align:center;font-size:10px;color:#6b7280}.barin,.barout{border-radius:7px 7px 3px 3px;min-height:2px}.barin{background:#16803c}.barout{background:#c62828;margin-top:3px}
+.filter{display:flex;gap:8px;overflow:auto;padding-bottom:8px}.filter button{white-space:nowrap}.active{background:#111827;color:white}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:center;gap:8px;padding:10px 8px calc(10px + env(safe-area-inset-bottom));z-index:5}nav button{background:#f0f1f3;color:#111827;flex:1;max-width:180px}
+.modal{display:none;position:fixed;inset:0;background:#0008;align-items:end;z-index:10}.sheet{background:#fff;width:100%;max-width:560px;margin:auto;padding:20px;border-radius:24px 24px 0 0;max-height:88vh;overflow:auto}
+input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;font-size:16px;margin:6px 0 11px}.actions{display:flex;gap:10px}.actions>*{flex:1}
+.stats{font-size:13px;color:#6b7280;margin:0 0 10px}.danger{background:#fee2e2;color:#991b1b}
+.legend{display:flex;gap:12px;font-size:11px;color:#6b7280}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.dotin{background:#16803c}.dotout{background:#c62828}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="headerrow"><b>💰 Kito Money V3</b><span id="count" class="small"></span></div>
+ <div class="small month" id="month"></div>
+ <div class="bal" id="bal">¥0</div><div class="small">Saldo</div>
+</header>
+
+<div class="grid">
+ <div class="card"><div class="small">Penghasilan</div><div class="n in" id="inc">¥0</div></div>
+ <div class="card"><div class="small">Pengeluaran</div><div class="n out" id="out">¥0</div></div>
+</div>
+
+<section>
+ <div class="title"><h2>📊 Ringkasan Bulanan</h2></div>
+ <div class="chartbox">
+  <div class="legend"><span><i class="dot dotin"></i>Masuk</span><span><i class="dot dotout"></i>Keluar</span></div>
+  <div id="chart" class="chart"></div>
+ </div>
+</section>
+
+<section>
+ <div class="title"><h2>🎯 Target Tabungan</h2><button onclick="openGoal()">＋</button></div>
+ <div id="goals"></div>
+</section>
+
+<section>
+ <div class="title"><h2>📝 Transaksi</h2><button onclick="openTx()">＋</button></div>
+ <div class="filter">
+  <button id="fAll" class="active" onclick="setFilter('all')">Semua</button>
+  <button id="fIn" class="secondary" onclick="setFilter('i')">Penghasilan</button>
+  <button id="fOut" class="secondary" onclick="setFilter('e')">Pengeluaran</button>
+ </div>
+ <div class="stats" id="stats"></div>
+ <div id="list"></div>
+</section>
+</div>
+
+<nav><button onclick="render()">🏠 Beranda</button><button onclick="openTx()">💸 Tambah</button><button onclick="openGoal()">🎯 Target</button></nav>
+
+<div class="modal" id="tm"><div class="sheet">
+ <h2 id="txTitle">Tambah Transaksi</h2>
+ <select id="type"><option value="i">💰 Penghasilan</option><option value="e">💸 Pengeluaran</option></select>
+ <input id="amt" type="number" inputmode="numeric" placeholder="Jumlah ¥">
+ <input id="note" placeholder="Catatan">
+ <select id="cat"><option>Makan</option><option>Rumah</option><option>Transportasi</option><option>Belanja</option><option>Tagihan</option><option>Hiburan</option><option>Lainnya</option></select>
+ <div class="actions"><button class="secondary" onclick="closeM()">Batal</button><button onclick="saveTx()">Simpan</button></div>
+</div></div>
+
+<div class="modal" id="gm"><div class="sheet">
+ <h2>🎯 Target Menabung</h2>
+ <input id="gn" placeholder="Contoh: Mobil">
+ <input id="gt" type="number" inputmode="numeric" placeholder="Target ¥">
+ <input id="gs" type="number" inputmode="numeric" placeholder="Sudah terkumpul ¥">
+ <div class="actions"><button class="secondary" onclick="closeM()">Batal</button><button onclick="saveGoal()">Simpan</button></div>
+</div></div>
+
+<script>
+const K="kito-v2";
+let d=JSON.parse(localStorage.getItem(K)||'{"t":[],"g":[]}');
+let filter='all', editIndex=-1;
+const Y=x=>"¥"+Math.round(x||0).toLocaleString("ja-JP");
+
+function save(){localStorage.setItem(K,JSON.stringify(d))}
+function openTx(index=-1){
+ editIndex=index; txTitle.textContent=index<0?"Tambah Transaksi":"Edit Transaksi";
+ if(index>=0){let x=d.t[index];type.value=x.type;amt.value=x.a;note.value=x.note||'';cat.value=x.cat||'Lainnya'}
+ else {type.value='i';amt.value='';note.value='';cat.value='Makan'}
+ tm.style.display='flex'
+}
+function openGoal(){gn.value='';gt.value='';gs.value='';gm.style.display='flex'}
+function closeM(){tm.style.display=gm.style.display='none'}
+function setFilter(x){filter=x;render()}
+function delTx(i){if(confirm('Hapus transaksi ini?')){d.t.splice(i,1);save();render()}}
+function saveTx(){
+ let a=+amt.value;if(!a||a<0)return alert("Masukkan jumlah.");
+ let obj={type:type.value,a,note:note.value,cat:cat.value,date:new Date().toLocaleDateString("id-ID")};
+ if(editIndex>=0)d.t[editIndex]=obj;else d.t.push(obj);
+ save();closeM();render()
+}
+function saveGoal(){
+ let n=gn.value.trim(),t=+gt.value,s=+gs.value||0;
+ if(!n||!t)return alert("Isi nama dan target.");
+ d.g.push({n,t,s});save();closeM();render()
+}
+function render(){
+ let I=d.t.filter(x=>x.type=="i").reduce((a,x)=>a+x.a,0),E=d.t.filter(x=>x.type=="e").reduce((a,x)=>a+x.a,0);
+ bal.textContent=Y(I-E);inc.textContent=Y(I);out.textContent=Y(E);
+ month.textContent=new Date().toLocaleDateString("id-ID",{month:"long",year:"numeric"});
+ count.textContent=d.t.length+" transaksi";
+
+ let arr=d.t.map((x,i)=>({...x,i})).filter(x=>filter==='all'||x.type===filter).reverse();
+ stats.textContent=arr.length+" transaksi ditampilkan";
+ list.innerHTML=arr.length?arr.map(x=>`<div class="item"><div><b>${esc(x.note||x.cat)}</b><div class="muted">${esc(x.cat)} · ${x.date}</div></div><div class="item-actions"><b class="${x.type=="i"?"in":"out"}">${x.type=="i"?"+":"−"}${Y(x.a)}</b><button class="tiny secondary" onclick="openTx(${x.i})">✏️</button><button class="tiny danger" onclick="delTx(${x.i})">🗑️</button></div></div>`).join(""):'<div class="empty">Belum ada transaksi.</div>';
+
+ goals.innerHTML=d.g.length?d.g.map(x=>{let q=Math.min(100,x.s/x.t*100||0);return `<div class="goal"><div class="title"><b>🎯 ${esc(x.n)}</b><b>${Math.round(q)}%</b></div><div class="bar"><div class="fill" style="width:${q}%"></div></div><div class="muted">${Y(x.s)} / ${Y(x.t)}</div></div>`}).join(""):'<div class="empty">Belum ada target.</div>';
+
+ document.querySelectorAll('.filter button').forEach(b=>{b.classList.remove('active');b.classList.add('secondary')});
+ (filter==='all'?fAll:filter==='i'?fIn:fOut).classList.add('active');
+ (filter==='all'?fAll:filter==='i'?fIn:fOut).classList.remove('secondary');
+ drawChart()
+}
+function drawChart(){
+ let now=new Date(), months=[];
+ for(let k=5;k>=0;k--){let dt=new Date(now.getFullYear(),now.getMonth()-k,1);months.push({y:dt.getFullYear(),m:dt.getMonth(),label:dt.toLocaleDateString('id-ID',{month:'short'}),i:0,e:0})}
+ d.t.forEach(x=>{
+  let p=(x.date||'').split('/');
+  if(p.length===3){let day=+p[0],mo=+p[1]-1,yr=+p[2];let z=months.find(v=>v.y===yr&&v.m===mo);if(z)z[x.type==='i'?'i':'e']+=x.a}
+ });
+ let max=Math.max(1,...months.flatMap(x=>[x.i,x.e]));
+ chart.innerHTML=months.map(x=>`<div class="barcol"><div style="height:105px;display:flex;align-items:flex-end;justify-content:center;gap:3px"><div class="barin" style="height:${Math.max(2,x.i/max*100)}px;width:9px"></div><div class="barout" style="height:${Math.max(2,x.e/max*100)}px;width:9px"></div></div><div>${x.label}</div></div>`).join("")
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+render();
+</script>
+</body>
+</html>
